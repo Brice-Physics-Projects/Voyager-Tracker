@@ -9,7 +9,7 @@ Goal: Build a public-facing web app that calls official **NASA APIs** to track *
 ## 🔭 Data Sources
 
 | Type | Description | Source / API |
-|------|--------------|---------------|
+| ------ | -------------- | --------------- |
 | **Position / Ephemeris** | Distance, velocity, coordinates | **JPL Horizons API** |
 | **Mission Status** | Engineering & health updates | **NASA / JPL mission status pages** |
 | **Images** | Historic flyby photos & press media | **NASA Image & Video Library API** |
@@ -50,7 +50,7 @@ Acts as a **proxy + cache layer** to:
 ## ⚙️ Data Handling
 
 | Function | Method |
-|-----------|--------|
+| ----------- | -------- |
 | **Fetch current data** | Call JPL Horizons API or use `astroquery.jplhorizons` |
 | **Fetch images** | `https://images-api.nasa.gov/search?q=voyager` |
 | **Cache strategy** | Refresh every 15–60 minutes |
@@ -110,7 +110,7 @@ Acts as a **proxy + cache layer** to:
 ## 📅 Minimum Viable Product (MVP)
 
 | Priority | Feature | Description |
-|-----------|----------|--------------|
+| ----------- | ---------- | -------------- |
 | ✅ | Live Distance Display | Real-time fetch from JPL Horizons |
 | ✅ | Image Gallery | Pull from NASA Image API |
 | ✅ | Timeline | Static dataset of key events |
