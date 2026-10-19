@@ -37,6 +37,11 @@ voyager-explorer/
 └── docs/
     ├── 01_overview/
     │   └── 00_project_plan.md
-    └── 01_architecture/
-        └── 00_structure.md
+    ├── 01_architecture/
+    │   └── 00_structure.md
+    ├── 02_data_sources/
+    │   └── 00_data_sources.md
+    └── 99_dev_diary/
+        ├── README_dev_diary.md
+        └── 2026-10-18_backend_setup.md
 ```

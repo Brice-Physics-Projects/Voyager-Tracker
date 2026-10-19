@@ -1,0 +1,170 @@
+# =============================================================================
+# voyager-tracker backend
+#
+# Intentionally COMMITTED (do not add these here):
+#   uv.lock           - reproducible, locked dependency graph
+#   .python-version   - pins the interpreter uv uses
+#   pyproject.toml
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Python bytecode / native extensions
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+
+# -----------------------------------------------------------------------------
+# Virtual environments (uv creates .venv/ by default)
+# -----------------------------------------------------------------------------
+backend/.venv/
+venv/
+env/
+ENV/
+.python-env/
+
+# -----------------------------------------------------------------------------
+# Packaging / build artifacts (hatchling, uv build)
+# -----------------------------------------------------------------------------
+build/
+dist/
+wheels/
+sdist/
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+MANIFEST
+
+# -----------------------------------------------------------------------------
+# Testing / coverage
+# -----------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+junit*.xml
+*.cover
+
+# -----------------------------------------------------------------------------
+# Linters / type checkers / tooling caches
+# -----------------------------------------------------------------------------
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.pyright/
+.cache/
+
+# -----------------------------------------------------------------------------
+# Jupyter notebooks
+#   Notebooks themselves are committed; strip outputs before committing
+#   (e.g. `uvx nbstripout --install`) to keep diffs clean and small.
+# -----------------------------------------------------------------------------
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+.jupyter/
+.ipython/
+profile_default/
+ipython_config.py
+# Scratch notebooks / local exports
+*.nbconvert.ipynb
+notebooks/scratch/
+notebooks/**/output/
+
+# -----------------------------------------------------------------------------
+# Secrets / environment config
+#   Commit a `.env.example` with placeholder values instead.
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.toml
+
+# -----------------------------------------------------------------------------
+# Local data, caches & generated output
+#   Large or downloaded datasets (e.g. SPICE kernels, Horizons dumps, imagery)
+#   should be fetched by script, not committed.
+# -----------------------------------------------------------------------------
+data/
+*.bsp
+*.bpc
+*.tls
+*.tpc
+*.tf
+*.ck
+*.bc
+*.sqlite
+*.sqlite3
+*.db
+*.log
+logs/
+tmp/
+*.tmp
+*.bak
+
+# -----------------------------------------------------------------------------
+# Profiling
+# -----------------------------------------------------------------------------
+*.prof
+*.lprof
+.benchmarks/
+
+# -----------------------------------------------------------------------------
+# JetBrains (PyCharm)
+#   Ignore user-specific state; shared run configs / code style may be committed.
+# -----------------------------------------------------------------------------
+.idea/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/shelf/
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/sqldialects.xml
+.idea/caches/
+.idea/libraries/
+.idea/jarRepositories.xml
+.idea/aws.xml
+.idea/copilot*
+.idea/**/*.local.xml
+*.iws
+out/
+
+# -----------------------------------------------------------------------------
+# VS Code
+#   Ignore everything except shared, team-useful config.
+# -----------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/*.code-snippets
+.history/
+*.vsix
+*.code-workspace
+
+# -----------------------------------------------------------------------------
+# OS cruft
+# -----------------------------------------------------------------------------
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*~
+.directory
+.Trash-*
