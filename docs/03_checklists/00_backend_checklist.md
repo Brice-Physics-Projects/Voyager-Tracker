@@ -12,10 +12,10 @@ Use this as the backend implementation roadmap. Check an item only after its com
 - [x] Verify that Python can import `voyager_tracker`.
 - [x] Create the FastAPI application entry point in `main.py`.
 - [x] Start the backend successfully with Uvicorn.
-- [ ] Confirm `GET /health` returns HTTP 200 and `{"status": "ok"}`.
-- [ ] Confirm the health route can be executed through `/docs`.
-- [ ] Confirm Git excludes `.venv/`, local secrets, and Python cache files.
-- [ ] Commit the dependency configuration and `uv.lock`.
+- [x] Confirm `GET /health` returns HTTP 200 and `{"status": "ok"}`.
+- [x] Confirm the health route can be executed through `/docs`.
+- [x] Confirm Git excludes `.venv/`, local secrets, and Python cache files.
+- [x] Commit the dependency configuration and `uv.lock`.
 
 Run development commands from `backend/`:
 
@@ -29,8 +29,8 @@ uv run uvicorn voyager_tracker.main:app --reload
 
 Start with Voyager 1 and a Sun-centered position request. Verify current official API documentation before choosing query parameters.
 
-- [ ] Install `httpx` with `uv add httpx`.
-- [ ] Create `src/voyager_tracker/services/horizons.py`.
+- [x] Install `httpx` with `uv add httpx`.
+- [x] Create `src/voyager_tracker/services/horizons.py`.
 - [ ] Confirm the spacecraft target identifier and supported ephemeris dates.
 - [ ] Choose the query type, reference origin, coordinate frame, time scale, and output units.
 - [ ] Request a small sample covering one or two epochs.
