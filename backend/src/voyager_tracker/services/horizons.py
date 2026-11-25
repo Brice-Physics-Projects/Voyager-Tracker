@@ -1,4 +1,4 @@
-import httpx
+import httpx2
 import csv
 from voyager_tracker.schemas.spacecraft import SpacecraftState
 
@@ -26,7 +26,7 @@ def fetch_voyager_1() -> str:
         "CSV_FORMAT": "'YES'",
     }
 
-    with httpx.Client(timeout=30.0) as client:
+    with httpx2.Client(timeout=30.0) as client:
         response = client.get(HORIZONS_URL, params=params)
         response.raise_for_status()
 

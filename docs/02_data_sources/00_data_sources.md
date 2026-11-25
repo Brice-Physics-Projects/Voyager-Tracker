@@ -47,7 +47,7 @@ The service currently uses fixed sample dates. It does not yet supply current-ti
 
 ### Verified Sample Query
 
-The following values match the successful Voyager 1 request. Quotes shown inside strings are part of the parameter values passed to Horizons; `httpx` handles URL encoding.
+The following values match the successful Voyager 1 request. Quotes shown inside strings are part of the parameter values passed to Horizons; `httpx2` handles URL encoding.
 
 ```python
 params = {

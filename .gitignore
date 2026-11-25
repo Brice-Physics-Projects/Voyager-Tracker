@@ -96,7 +96,7 @@ secrets.toml
 #   Large or downloaded datasets (e.g. SPICE kernels, Horizons dumps, imagery)
 #   should be fetched by script, not committed.
 # -----------------------------------------------------------------------------
-data/
+/data/
 *.bsp
 *.bpc
 *.tls
