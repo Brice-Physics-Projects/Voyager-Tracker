@@ -1,6 +1,6 @@
 from math import hypot
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 
 class SpacecraftState(BaseModel):
@@ -17,10 +17,12 @@ class SpacecraftState(BaseModel):
     vy_km_s: float
     vz_km_s: float
 
+    @computed_field
     @property
     def distance_from_sun_km(self) -> float:
         return hypot(self.x_km, self.y_km, self.z_km)
 
+    @computed_field
     @property
     def speed_relative_to_sun_km_s(self) -> float:
         return hypot(self.vx_km_s, self.vy_km_s, self.vz_km_s)

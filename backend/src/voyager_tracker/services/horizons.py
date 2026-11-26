@@ -1,33 +1,37 @@
-import httpx
 import csv
+from typing import Final
+
+import httpx2
+
 from voyager_tracker.schemas.spacecraft import SpacecraftState
 
-HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
+HORIZONS_URL: Final = "https://ssd.jpl.nasa.gov/api/horizons.api"
+
+# Fixed sample query: Voyager 1, Sun-centered geometric ICRF state vectors.
+VOYAGER_1_SAMPLE_PARAMS: Final[dict[str, str]] = {
+    "format": "json",
+    "COMMAND": "'-31'",
+    "OBJ_DATA": "'YES'",
+    "MAKE_EPHEM": "'YES'",
+    "EPHEM_TYPE": "'VECTORS'",
+    "CENTER": "'500@10'",
+    "START_TIME": "'2026-10-19 00:00'",
+    "STOP_TIME": "'2026-10-19 01:00'",
+    "STEP_SIZE": "'1 h'",
+    "TIME_TYPE": "'UT'",
+    "REF_SYSTEM": "'ICRF'",
+    "REF_PLANE": "'FRAME'",
+    "OUT_UNITS": "'KM-S'",
+    "VEC_CORR": "'NONE'",
+    "VEC_TABLE": "'2'",
+    "CSV_FORMAT": "'YES'",
+}
 
 
 def fetch_voyager_1() -> str:
     """Fetch a small sample of Voyager 1's Sun-relative state vectors."""
-    params = {
-        "format": "json",
-        "COMMAND": "'-31'",
-        "OBJ_DATA": "'YES'",
-        "MAKE_EPHEM": "'YES'",
-        "EPHEM_TYPE": "'VECTORS'",
-        "CENTER": "'500@10'",
-        "START_TIME": "'2026-10-19 00:00'",
-        "STOP_TIME": "'2026-10-19 01:00'",
-        "STEP_SIZE": "'1 h'",
-        "TIME_TYPE": "'UT'",
-        "REF_SYSTEM": "'ICRF'",
-        "REF_PLANE": "'FRAME'",
-        "OUT_UNITS": "'KM-S'",
-        "VEC_CORR": "'NONE'",
-        "VEC_TABLE": "'2'",
-        "CSV_FORMAT": "'YES'",
-    }
-
-    with httpx.Client(timeout=30.0) as client:
-        response = client.get(HORIZONS_URL, params=params)
+    with httpx2.Client(timeout=30.0) as client:
+        response = client.get(HORIZONS_URL, params=VOYAGER_1_SAMPLE_PARAMS)
         response.raise_for_status()
 
     payload = response.json()
@@ -42,6 +46,7 @@ def fetch_voyager_1() -> str:
 
     return result
 
+
 def extract_ephemeris_rows(report: str) -> list[str]:
     """Extract nonempty data rows between Horizons' table markers."""
     if "$$SOE" not in report or "$$EOE" not in report:
@@ -49,11 +54,8 @@ def extract_ephemeris_rows(report: str) -> list[str]:
 
     table = report.split("$$SOE", 1)[1].split("$$EOE", 1)[0]
 
-    return [
-        line.strip()
-        for line in table.splitlines()
-        if line.strip()
-    ]
+    return [line.strip() for line in table.splitlines() if line.strip()]
+
 
 def parse_ephemeris_row(row: str) -> SpacecraftState:
     """Convert one Horizons CSV row into a validated spacecraft state."""
@@ -64,9 +66,7 @@ def parse_ephemeris_row(row: str) -> SpacecraftState:
         fields.pop()
 
     if len(fields) != 8:
-        raise ValueError(
-            f"Expected 8 ephemeris fields, received {len(fields)}."
-        )
+        raise ValueError(f"Expected 8 ephemeris fields, received {len(fields)}.")
 
     return SpacecraftState(
         julian_date=float(fields[0]),
@@ -79,6 +79,7 @@ def parse_ephemeris_row(row: str) -> SpacecraftState:
         vz_km_s=float(fields[7]),
     )
 
+
 def get_voyager_1_states() -> list[SpacecraftState]:
     """Fetch and parse the configured Voyager 1 sample."""
     report = fetch_voyager_1()
@@ -86,15 +87,10 @@ def get_voyager_1_states() -> list[SpacecraftState]:
 
     return [parse_ephemeris_row(row) for row in rows]
 
+
 if __name__ == "__main__":
     for state in get_voyager_1_states():
         print(f"Epoch: {state.epoch_utc}")
-        print(
-            f"Distance from Sun: "
-            f"{state.distance_from_sun_km:,.0f} km"
-        )
-        print(
-            f"Speed relative to Sun: "
-            f"{state.speed_relative_to_sun_km_s:.3f} km/s"
-        )
+        print(f"Distance from Sun: {state.distance_from_sun_km:,.0f} km")
+        print(f"Speed relative to Sun: {state.speed_relative_to_sun_km_s:.3f} km/s")
         print()
