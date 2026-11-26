@@ -60,12 +60,12 @@ Start with Voyager 1 and a Sun-centered position request. Verify current officia
 
 ## 4. Parse and Normalize the Data
 
-- [ ] Keep upstream request logic distinct from parsing and calculations; split files only if useful.
+- [x] Keep upstream request logic distinct from parsing and calculations; split files only if useful.
 - [x] Parse the selected epoch and position values from the actual Horizons payload.
 - [x] Define an internal Pydantic model for parsed states in `schemas/` (`SpacecraftState`).
 - [x] Expose derived values (distance, speed) with `@computed_field` so they appear in serialized output.
 - [x] Define the public response contract; use a separate model when it needs to differ from the internal model.
-- [ ] Include spacecraft identity, epoch, origin, frame, time scale, units, retrieval time, and source.
+- [x] Include spacecraft identity, epoch, origin, frame, time scale, units, retrieval time, and source.
 - [x] Normalize the fixed sample's Horizons calendar epoch (`A.D. 2026-Oct-19 00:00:00.0000`) into a timezone-aware UTC `datetime`.
 - [ ] Preserve the time scale and uncertainty of future UT values when leap seconds are unknown before accepting future epochs.
 - [x] Represent Sun-relative distance and speed with explicit names and units.
@@ -214,4 +214,4 @@ Do these checks alongside the relevant phases; do not defer all validation until
 
 ## Immediate Next Action
 
-Continue **Phase 4** by defining the response metadata and handling upstream failures. Future UT epochs remain unsupported until their time-scale uncertainty can be represented. Then expose a minimal, tested Voyager 1 route before expanding the backend.
+Continue **Phase 4** by handling upstream failures and comparing parsed results with Horizons. Future UT epochs remain unsupported until their time-scale uncertainty can be represented. Then expose a minimal, tested Voyager 1 route before expanding the backend.

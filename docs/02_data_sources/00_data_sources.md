@@ -32,16 +32,17 @@ Horizons supplies the calculated position and velocity data used by the initial 
 | Request and parsing service | `backend/src/voyager_tracker/services/horizons.py` |
 | Parsed state model | `backend/src/voyager_tracker/schemas/spacecraft.py` |
 | Public response contract | `SpacecraftResponse` in `backend/src/voyager_tracker/schemas/spacecraft.py` |
-| Fetch report | `fetch_voyager_1()` |
+| Fetch report and retrieval time | `fetch_voyager_1()` |
 | Extract table | `extract_ephemeris_rows()` |
 | Parse row | `parse_ephemeris_row()` |
 | Combined workflow | `get_voyager_1_states()` |
-| Latest whole-hour state | `get_current_voyager_1_state()` |
+| Latest whole-hour response | `get_current_voyager_1_state()` |
 
 The fixed sample remains the default for `get_voyager_1_states()`. For a recent
 position, `get_current_voyager_1_state()` rounds the current UTC time down to the
 hour, requests that epoch and the preceding hour, and returns the last state
-without interpolation. The state can be up to an hour old. The current-time
+and its provenance without interpolation. The state can be more than an hour
+old if the upstream request is slow. The current-time
 query is restricted to the conservative 1981-01-01 through 2100-01-01
 trajectory interval, with the upper bound exclusive; requests outside that
 interval fail explicitly. The service does not yet expose a spacecraft HTTP
@@ -167,10 +168,10 @@ The report's `Revised: Aug 19, 2022` heading is not the position epoch. The veri
 
 The `SpacecraftResponse` contract contains the state, spacecraft identity, source,
 Sun origin, ICRF frame, UTC time scale, units, geometric correction, and retrieval
-time. It is not yet populated by the service or exposed through an endpoint.
-The retrieval time must be captured when the upstream response is obtained, not
-replaced by the position epoch or a later cache-hit time. Trajectory provenance
-is not yet included in the response.
+time. The service populates it using the time when the upstream response was
+received, not the position epoch; no endpoint or cache exists yet. A future
+cache must preserve that original retrieval time. Trajectory provenance is not
+yet included in the response.
 
 ### Limitations
 

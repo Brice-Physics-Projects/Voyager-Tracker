@@ -67,7 +67,57 @@ def test_voyager_1_workflow_with_recorded_response(monkeypatch, horizons_fixture
     monkeypatch.setattr(
         horizons, "current_voyager_1_params", lambda now: VOYAGER_1_SAMPLE_PARAMS
     )
-    assert horizons.get_current_voyager_1_state() == states[-1]
+    before = datetime.now(UTC)
+    result = horizons.get_current_voyager_1_state()
+    after = datetime.now(UTC)
+    assert result.state == states[-1]
+    assert before <= result.retrieved_at_utc <= after
+    assert result.retrieved_at_utc != result.state.epoch_utc
+    assert result.spacecraft == "Voyager 1"
+    assert result.source == "NASA/JPL Horizons"
+    assert result.origin == "Sun"
+    assert result.frame == "ICRF"
+    assert result.time_scale == "UTC"
+    assert result.position_unit == "km"
+    assert result.velocity_unit == "km/s"
+    assert result.correction == "geometric"
+
+
+def test_retrieval_time_is_captured_before_parsing(monkeypatch, horizons_fixture):
+    received_at = datetime(2026, 11, 26, 5, 0, tzinfo=UTC)
+    clock = [received_at - timedelta(seconds=10)]
+
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return clock[0]
+
+    def respond(request):
+        clock[0] = received_at
+        return httpx2.Response(200, json=horizons_fixture["response"])
+
+    parse = horizons.parse_voyager_1_report
+
+    def parse_later(report):
+        clock[0] = received_at + timedelta(minutes=1)
+        return parse(report)
+
+    client = httpx2.Client
+    transport = httpx2.MockTransport(respond)
+    monkeypatch.setattr(horizons, "datetime", Clock)
+    monkeypatch.setattr(
+        horizons.httpx2,
+        "Client",
+        lambda **kwargs: client(transport=transport, **kwargs),
+    )
+    monkeypatch.setattr(
+        horizons, "current_voyager_1_params", lambda now: VOYAGER_1_SAMPLE_PARAMS
+    )
+    monkeypatch.setattr(horizons, "parse_voyager_1_report", parse_later)
+
+    result = horizons.get_current_voyager_1_state()
+    assert result.retrieved_at_utc == received_at
+    assert clock[0] > result.retrieved_at_utc
 
 
 def test_current_query_rounds_down_and_respects_supported_interval():
@@ -95,7 +145,9 @@ def test_future_epochs_are_rejected(monkeypatch):
     epoch = (datetime.now(UTC) + timedelta(days=1)).strftime("%Y-%b-%d %H:%M:%S.%f")
     row = f"2462502.5, A.D. {epoch}, 1, 2, 3, 4, 5, 6,"
     monkeypatch.setattr(
-        horizons, "fetch_voyager_1", lambda params: f"$$SOE\n{row}\n$$EOE"
+        horizons,
+        "fetch_voyager_1",
+        lambda params: (f"$$SOE\n{row}\n$$EOE", datetime.now(UTC)),
     )
     with pytest.raises(ValueError, match="in the future"):
         horizons.get_voyager_1_states()
@@ -108,7 +160,10 @@ def test_current_query_rejects_unexpected_epochs(monkeypatch):
     monkeypatch.setattr(
         horizons, "current_voyager_1_params", lambda now: VOYAGER_1_SAMPLE_PARAMS
     )
-    monkeypatch.setattr(horizons, "get_voyager_1_states", lambda params: [])
+    monkeypatch.setattr(
+        horizons, "fetch_voyager_1", lambda params: ("report", datetime.now(UTC))
+    )
+    monkeypatch.setattr(horizons, "parse_voyager_1_report", lambda report: [])
     with pytest.raises(ValueError, match="unexpected current-time epochs"):
         horizons.get_current_voyager_1_state()
 
