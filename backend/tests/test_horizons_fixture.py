@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx2
@@ -14,7 +14,7 @@ from voyager_tracker.services.horizons import (
 )
 
 
-def test_recorded_voyager_1_response():
+def test_recorded_voyager_1_response(monkeypatch):
     path = (
         Path(__file__).parent
         / "fixtures"
@@ -37,6 +37,68 @@ def test_recorded_voyager_1_response():
     assert states[0].vx_km_s == -2.069749408670841
     assert states[1].epoch_utc == datetime(2026, 10, 19, 1, tzinfo=UTC)
     assert states[0].model_dump(mode="json")["epoch_utc"] == "2026-10-19T00:00:00Z"
+
+    def respond(request):
+        assert str(request.url.copy_with(query=None)) == fixture["metadata"]["url"]
+        assert request.method == fixture["metadata"]["method"]
+        assert dict(request.url.params) == fixture["metadata"]["params"]
+        return httpx2.Response(200, json=fixture["response"])
+
+    client = httpx2.Client
+    transport = httpx2.MockTransport(respond)
+    monkeypatch.setattr(
+        horizons.httpx2,
+        "Client",
+        lambda **kwargs: client(transport=transport, **kwargs),
+    )
+    assert horizons.get_voyager_1_states() == states
+    monkeypatch.setattr(
+        horizons, "current_voyager_1_params", lambda now: VOYAGER_1_SAMPLE_PARAMS
+    )
+    assert horizons.get_current_voyager_1_state() == states[-1]
+
+
+def test_current_query_rounds_down_and_respects_supported_interval():
+    params = horizons.current_voyager_1_params(
+        datetime(2026, 11, 26, 0, 24, tzinfo=UTC)
+    )
+    assert params["START_TIME"] == "'2026-11-25 23:00'"
+    assert params["STOP_TIME"] == "'2026-11-26 00:00'"
+    assert params["TIME_TYPE"] == "'UT'"
+    assert VOYAGER_1_SAMPLE_PARAMS["START_TIME"] == "'2026-10-19 00:00'"
+    offset_now = datetime(2026, 11, 25, 19, 24, tzinfo=timezone(-timedelta(hours=5)))
+    assert horizons.current_voyager_1_params(offset_now) == params
+
+    for now in (
+        datetime(1981, 1, 1, tzinfo=UTC),
+        datetime(2100, 1, 1, tzinfo=UTC),
+    ):
+        with pytest.raises(ValueError, match="outside the supported"):
+            horizons.current_voyager_1_params(now)
+    with pytest.raises(ValueError, match="timezone-aware"):
+        horizons.current_voyager_1_params(datetime(2026, 11, 26))
+
+
+def test_future_epochs_are_rejected(monkeypatch):
+    epoch = (datetime.now(UTC) + timedelta(days=1)).strftime("%Y-%b-%d %H:%M:%S.%f")
+    row = f"2462502.5, A.D. {epoch}, 1, 2, 3, 4, 5, 6,"
+    monkeypatch.setattr(
+        horizons, "fetch_voyager_1", lambda params: f"$$SOE\n{row}\n$$EOE"
+    )
+    with pytest.raises(ValueError, match="in the future"):
+        horizons.get_voyager_1_states()
+
+    with pytest.raises(ValueError, match="requires UT epochs"):
+        horizons.get_voyager_1_states({**VOYAGER_1_SAMPLE_PARAMS, "TIME_TYPE": "'TDB'"})
+
+
+def test_current_query_rejects_unexpected_epochs(monkeypatch):
+    monkeypatch.setattr(
+        horizons, "current_voyager_1_params", lambda now: VOYAGER_1_SAMPLE_PARAMS
+    )
+    monkeypatch.setattr(horizons, "get_voyager_1_states", lambda params: [])
+    with pytest.raises(ValueError, match="unexpected current-time epochs"):
+        horizons.get_current_voyager_1_state()
 
 
 @pytest.mark.parametrize(

@@ -35,8 +35,16 @@ Horizons supplies the calculated position and velocity data used by the initial 
 | Extract table | `extract_ephemeris_rows()` |
 | Parse row | `parse_ephemeris_row()` |
 | Combined workflow | `get_voyager_1_states()` |
+| Latest whole-hour state | `get_current_voyager_1_state()` |
 
-The service currently uses fixed sample dates. It does not yet supply current-time positions through a spacecraft HTTP endpoint.
+The fixed sample remains the default for `get_voyager_1_states()`. For a recent
+position, `get_current_voyager_1_state()` rounds the current UTC time down to the
+hour, requests that epoch and the preceding hour, and returns the last state
+without interpolation. The state can be up to an hour old. The current-time
+query is restricted to the conservative 1981-01-01 through 2100-01-01
+trajectory interval, with the upper bound exclusive; requests outside that
+interval fail explicitly. The service does not yet expose a spacecraft HTTP
+endpoint.
 
 The recorded response and its request metadata are in
 `backend/tests/fixtures/horizons/voyager_1_sun_vectors_2026-10-19.json`.
@@ -114,7 +122,7 @@ Each row in the current format contains:
 | 6 | `VY` | `vy_km_s` | Y velocity component, km/s |
 | 7 | `VZ` | `vz_km_s` | Z velocity component, km/s |
 
-Rows end with a trailing comma. The parser removes the resulting final empty field before checking for eight fields. Numerical strings, including scientific notation, are converted to finite floats. The parser converts the sample's calendar epoch, such as `A.D. 2026-Oct-19 00:00:00.0000`, to a UTC-aware datetime; this is appropriate for the fixed sample, whose UT epochs were already in the past when the report was retrieved. Before accepting future epochs, explicitly preserve the report's time scale and the uncertainty of UT~ values caused by unknown leap seconds instead of treating them as definitive UTC.
+Rows end with a trailing comma. The parser removes the resulting final empty field before checking for eight fields. Numerical strings, including scientific notation, are converted to finite floats. The parser converts the calendar epoch, such as `A.D. 2026-Oct-19 00:00:00.0000`, to a UTC-aware datetime. The service rejects future epochs rather than treating predicted UT as definitive UTC; the current query uses only elapsed hours. Horizons may use the last known leap second for future UT even if the table itself does not show `UT~`. Before accepting future epochs, explicitly preserve that uncertainty and the source time scale.
 
 ### Derived Quantities
 
@@ -161,7 +169,7 @@ The current parsed state model does not yet carry retrieval time, reference meta
 ### Limitations
 
 - Positions are calculated ephemerides, not direct live telemetry measurements.
-- The sample query remains fixed even when the program is run later.
+- The sample query remains fixed even when the program is run later; the separate current query returns the latest whole-hour state.
 - Sun-relative distance is not distance from Earth.
 - Geometric states do not include signal propagation corrections.
 - Query success does not establish the accuracy of the underlying trajectory prediction.

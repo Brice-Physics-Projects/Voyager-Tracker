@@ -1,5 +1,5 @@
 import csv
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Final, cast
 
 import httpx2
@@ -29,10 +29,12 @@ VOYAGER_1_SAMPLE_PARAMS: Final[dict[str, str]] = {
 }
 
 
-def fetch_voyager_1() -> str:
-    """Fetch a small sample of Voyager 1's Sun-relative state vectors."""
+def fetch_voyager_1(params: dict[str, str] | None = None) -> str:
+    """Fetch Voyager 1's Sun-relative state vectors."""
     with httpx2.Client(timeout=30.0) as client:
-        response = client.get(HORIZONS_URL, params=VOYAGER_1_SAMPLE_PARAMS)
+        response = client.get(
+            HORIZONS_URL, params=VOYAGER_1_SAMPLE_PARAMS if params is None else params
+        )
         response.raise_for_status()
 
     payload: object = response.json()
@@ -48,6 +50,9 @@ def fetch_voyager_1() -> str:
 
     if not isinstance(result, str) or "$$SOE" not in result:
         raise RuntimeError("Horizons did not return an ephemeris table.")
+
+    if "UT~" in result.split("$$SOE", 1)[0]:
+        raise RuntimeError("Horizons returned uncertain UT~ epochs, not confirmed UTC.")
 
     return result
 
@@ -92,12 +97,57 @@ def parse_ephemeris_row(row: str) -> SpacecraftState:
     )
 
 
-def get_voyager_1_states() -> list[SpacecraftState]:
-    """Fetch and parse the configured Voyager 1 sample."""
-    report = fetch_voyager_1()
+def get_voyager_1_states(
+    params: dict[str, str] | None = None,
+) -> list[SpacecraftState]:
+    """Fetch and parse Voyager 1 states, defaulting to the fixed sample."""
+    if params is not None and params.get("TIME_TYPE") != "'UT'":
+        raise ValueError("Voyager 1 state parsing requires UT epochs.")
+    report = fetch_voyager_1(params)
     rows = extract_ephemeris_rows(report)
+    states = [parse_ephemeris_row(row) for row in rows]
+    now = datetime.now(UTC)
+    if any(
+        not datetime(1972, 1, 1, tzinfo=UTC) <= state.epoch_utc <= now
+        for state in states
+    ):
+        raise ValueError(
+            "UT epochs before 1972 or in the future cannot be assumed UTC."
+        )
+    return states
 
-    return [parse_ephemeris_row(row) for row in rows]
+
+def current_voyager_1_params(now: datetime) -> dict[str, str]:
+    """Request two hourly epochs ending at the most recent UTC hour."""
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("Current time must be timezone-aware.")
+    end = now.astimezone(UTC).replace(minute=0, second=0, microsecond=0)
+    start = end - timedelta(hours=1)
+    if start < datetime(1981, 1, 1, tzinfo=UTC) or end >= datetime(
+        2100, 1, 1, tzinfo=UTC
+    ):
+        raise ValueError("Current time is outside the supported Voyager 1 interval.")
+    return {
+        **VOYAGER_1_SAMPLE_PARAMS,
+        "START_TIME": start.strftime("'%Y-%m-%d %H:%M'"),
+        "STOP_TIME": end.strftime("'%Y-%m-%d %H:%M'"),
+    }
+
+
+def get_current_voyager_1_state() -> SpacecraftState:
+    """Fetch the most recent whole-hour Voyager 1 state, without interpolation."""
+    params = current_voyager_1_params(datetime.now(UTC))
+    states = get_voyager_1_states(params)
+    expected = datetime.strptime(params["STOP_TIME"], "'%Y-%m-%d %H:%M'").replace(
+        tzinfo=UTC
+    )
+    if (
+        len(states) != 2
+        or states[0].epoch_utc != expected - timedelta(hours=1)
+        or states[1].epoch_utc != expected
+    ):
+        raise ValueError("Horizons returned unexpected current-time epochs.")
+    return states[-1]
 
 
 if __name__ == "__main__":
