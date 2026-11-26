@@ -1,12 +1,14 @@
 from math import hypot
 
-from pydantic import BaseModel, computed_field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, computed_field
 
 
 class SpacecraftState(BaseModel):
     """One Sun-relative geometric state in the ICRF frame."""
 
-    epoch_utc: str
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    epoch_utc: AwareDatetime
     julian_date: float
 
     x_km: float

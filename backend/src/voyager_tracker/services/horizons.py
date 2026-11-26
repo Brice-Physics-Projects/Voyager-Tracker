@@ -1,5 +1,6 @@
 import csv
-from typing import Final
+from datetime import UTC, datetime
+from typing import Final, cast
 
 import httpx2
 
@@ -34,12 +35,16 @@ def fetch_voyager_1() -> str:
         response = client.get(HORIZONS_URL, params=VOYAGER_1_SAMPLE_PARAMS)
         response.raise_for_status()
 
-    payload = response.json()
+    payload: object = response.json()
 
-    if payload.get("error"):
-        raise RuntimeError(f"Horizons error: {payload['error']}")
+    if not isinstance(payload, dict):
+        raise RuntimeError("Horizons returned an invalid response envelope.")
 
-    result = payload.get("result")
+    envelope = cast("dict[str, object]", payload)
+    if envelope.get("error"):
+        raise RuntimeError(f"Horizons error: {envelope['error']}")
+
+    result = envelope.get("result")
 
     if not isinstance(result, str) or "$$SOE" not in result:
         raise RuntimeError("Horizons did not return an ephemeris table.")
@@ -52,14 +57,19 @@ def extract_ephemeris_rows(report: str) -> list[str]:
     if "$$SOE" not in report or "$$EOE" not in report:
         raise ValueError("The report is missing ephemeris table markers.")
 
-    table = report.split("$$SOE", 1)[1].split("$$EOE", 1)[0]
+    table, end_marker, _ = report.split("$$SOE", 1)[1].partition("$$EOE")
+    if not end_marker:
+        raise ValueError("The ephemeris table markers are out of order.")
 
-    return [line.strip() for line in table.splitlines() if line.strip()]
+    rows = [line.strip() for line in table.splitlines() if line.strip()]
+    if not rows:
+        raise ValueError("The ephemeris table is empty.")
+    return rows
 
 
 def parse_ephemeris_row(row: str) -> SpacecraftState:
-    """Convert one Horizons CSV row into a validated spacecraft state."""
-    fields = next(csv.reader([row], skipinitialspace=True))
+    """Convert a row from the fixed sample, whose UT epochs are known UTC."""
+    fields = next(csv.reader([row], skipinitialspace=True), list[str]())
 
     # Horizons includes an empty field after the trailing comma.
     if fields and not fields[-1].strip():
@@ -70,7 +80,9 @@ def parse_ephemeris_row(row: str) -> SpacecraftState:
 
     return SpacecraftState(
         julian_date=float(fields[0]),
-        epoch_utc=fields[1].strip(),
+        epoch_utc=datetime.strptime(
+            fields[1].strip(), "A.D. %Y-%b-%d %H:%M:%S.%f"
+        ).replace(tzinfo=UTC),
         x_km=float(fields[2]),
         y_km=float(fields[3]),
         z_km=float(fields[4]),

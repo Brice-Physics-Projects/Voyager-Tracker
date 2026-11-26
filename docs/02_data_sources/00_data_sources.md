@@ -106,7 +106,7 @@ Each row in the current format contains:
 | Index | Source column | Application field | Meaning / units |
 | --- | --- | --- | --- |
 | 0 | `JDUT` | `julian_date` | Julian day value on the requested UT time scale |
-| 1 | Calendar Date (UT) | `epoch_utc` | Calendar epoch retained as source text |
+| 1 | Calendar Date (UT) | `epoch_utc` | Sample calendar epoch as a timezone-aware UTC datetime |
 | 2 | `X` | `x_km` | X position component, km |
 | 3 | `Y` | `y_km` | Y position component, km |
 | 4 | `Z` | `z_km` | Z position component, km |
@@ -114,7 +114,7 @@ Each row in the current format contains:
 | 6 | `VY` | `vy_km_s` | Y velocity component, km/s |
 | 7 | `VZ` | `vz_km_s` | Z velocity component, km/s |
 
-Rows end with a trailing comma. The parser removes the resulting final empty field before checking for eight fields. Numerical strings, including scientific notation, are converted to floats. The epoch remains a string such as `A.D. 2026-Oct-19 00:00:00.0000`; timestamp normalization is pending.
+Rows end with a trailing comma. The parser removes the resulting final empty field before checking for eight fields. Numerical strings, including scientific notation, are converted to finite floats. The parser converts the sample's calendar epoch, such as `A.D. 2026-Oct-19 00:00:00.0000`, to a UTC-aware datetime; this is appropriate for the fixed sample, whose UT epochs were already in the past when the report was retrieved. Before accepting future epochs, explicitly preserve the report's time scale and the uncertainty of UT~ values caused by unknown leap seconds instead of treating them as definitive UTC.
 
 ### Derived Quantities
 
@@ -134,7 +134,7 @@ These names are valid because the current query is Sun-centered. They must not b
 
 Negative components indicate direction along an axis. Vector magnitudes are nonnegative. Total speed is different from radial recession speed, which measures only the velocity component along the position vector.
 
-The model currently exposes these magnitudes as ordinary Python properties. They are not automatically included in Pydantic JSON serialization. A public response schema must explicitly expose the intended calculated values.
+The model exposes these magnitudes as Pydantic computed fields, including in serialized output. A public response schema must expose the intended calculated values.
 
 ### Observed Sample Results
 

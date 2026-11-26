@@ -1,10 +1,12 @@
+from datetime import UTC, datetime
+
 from voyager_tracker.schemas.spacecraft import SpacecraftState
 
 
 def make_state() -> SpacecraftState:
     # 3-4-0 and 6-8-0 triangles give exact magnitudes of 5 and 10.
     return SpacecraftState(
-        epoch_utc="A.D. 2026-Oct-19 00:00:00.0000",
+        epoch_utc=datetime(2026, 10, 19, tzinfo=UTC),
         julian_date=2461332.5,
         x_km=3.0,
         y_km=4.0,

@@ -66,11 +66,12 @@ Start with Voyager 1 and a Sun-centered position request. Verify current officia
 - [x] Expose derived values (distance, speed) with `@computed_field` so they appear in serialized output.
 - [ ] Define the public response contract; use a separate model when it needs to differ from the internal model.
 - [ ] Include spacecraft identity, epoch, origin, frame, time scale, units, retrieval time, and source.
-- [ ] Normalize the sample's Horizons calendar epoch (`A.D. 2026-Oct-19 00:00:00.0000`) into a timezone-aware `datetime` where UT corresponds to UTC; preserve the time-scale and uncertainty of future UT values when leap seconds are unknown.
+- [x] Normalize the fixed sample's Horizons calendar epoch (`A.D. 2026-Oct-19 00:00:00.0000`) into a timezone-aware UTC `datetime`.
+- [ ] Preserve the time scale and uncertainty of future UT values when leap seconds are unknown before accepting future epochs.
 - [ ] Represent Sun-relative distance and speed with explicit names and units.
 - [ ] Choose a current-time query strategy (e.g. round to the hour for cacheability; stay within supported ephemeris dates) while preserving the fixed sample for tests.
 - [x] Reject rows with an unexpected field count or unconvertible numeric values.
-- [ ] Reject other invalid data, including non-finite numeric values, and test malformed rows and API-error responses.
+- [x] Reject non-finite numeric values and test malformed rows, invalid tables, and API-error responses.
 - [ ] Handle upstream and parsing failures explicitly; introduce project exception types if needed to distinguish response behavior.
 - [ ] Compare parsed results with the same query in the Horizons interface or official output.
 
@@ -213,4 +214,4 @@ Do these checks alongside the relevant phases; do not defer all validation until
 
 ## Immediate Next Action
 
-Continue **Phase 4** with parsing and API-error tests, including non-finite values, and normalize the sample epoch with its time-scale caveats. Then choose a current-time query and expose a minimal, tested Voyager 1 route with controlled errors before expanding the backend.
+Continue **Phase 4** by choosing a current-time query, handling its time scale and uncertainty, and defining the response metadata. Then expose a minimal, tested Voyager 1 route with controlled errors before expanding the backend.
