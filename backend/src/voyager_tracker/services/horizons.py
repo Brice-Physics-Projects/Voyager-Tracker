@@ -1,5 +1,7 @@
-import httpx2
 import csv
+
+import httpx2
+
 from voyager_tracker.schemas.spacecraft import SpacecraftState
 
 HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
@@ -42,6 +44,7 @@ def fetch_voyager_1() -> str:
 
     return result
 
+
 def extract_ephemeris_rows(report: str) -> list[str]:
     """Extract nonempty data rows between Horizons' table markers."""
     if "$$SOE" not in report or "$$EOE" not in report:
@@ -49,11 +52,8 @@ def extract_ephemeris_rows(report: str) -> list[str]:
 
     table = report.split("$$SOE", 1)[1].split("$$EOE", 1)[0]
 
-    return [
-        line.strip()
-        for line in table.splitlines()
-        if line.strip()
-    ]
+    return [line.strip() for line in table.splitlines() if line.strip()]
+
 
 def parse_ephemeris_row(row: str) -> SpacecraftState:
     """Convert one Horizons CSV row into a validated spacecraft state."""
@@ -64,9 +64,7 @@ def parse_ephemeris_row(row: str) -> SpacecraftState:
         fields.pop()
 
     if len(fields) != 8:
-        raise ValueError(
-            f"Expected 8 ephemeris fields, received {len(fields)}."
-        )
+        raise ValueError(f"Expected 8 ephemeris fields, received {len(fields)}.")
 
     return SpacecraftState(
         julian_date=float(fields[0]),
@@ -79,6 +77,7 @@ def parse_ephemeris_row(row: str) -> SpacecraftState:
         vz_km_s=float(fields[7]),
     )
 
+
 def get_voyager_1_states() -> list[SpacecraftState]:
     """Fetch and parse the configured Voyager 1 sample."""
     report = fetch_voyager_1()
@@ -86,15 +85,10 @@ def get_voyager_1_states() -> list[SpacecraftState]:
 
     return [parse_ephemeris_row(row) for row in rows]
 
+
 if __name__ == "__main__":
     for state in get_voyager_1_states():
         print(f"Epoch: {state.epoch_utc}")
-        print(
-            f"Distance from Sun: "
-            f"{state.distance_from_sun_km:,.0f} km"
-        )
-        print(
-            f"Speed relative to Sun: "
-            f"{state.speed_relative_to_sun_km_s:.3f} km/s"
-        )
+        print(f"Distance from Sun: {state.distance_from_sun_km:,.0f} km")
+        print(f"Speed relative to Sun: {state.speed_relative_to_sun_km_s:.3f} km/s")
         print()

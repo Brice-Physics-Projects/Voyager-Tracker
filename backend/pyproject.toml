@@ -22,8 +22,39 @@ dev = [
     "ipython>=9.17.1",
     "ruff>=0.17.6",
     "pyright>=1.1.414",
-    "mypy>=2.4.1",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.pyright]
+include = ["src", "tests"]
+strict = ["src"]
+pythonVersion = "3.12"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort (import sorting)
+    "UP",    # pyupgrade (modern syntax for the target version)
+    "B",     # flake8-bugbear (likely bugs)
+    "C4",    # flake8-comprehensions
+    "SIM",   # flake8-simplify
+    "PT",    # flake8-pytest-style
+    "ASYNC", # flake8-async (blocking calls in async code)
+    "FAST",  # FastAPI-specific rules
+    "RUF",   # ruff-specific rules
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["voyager_tracker"]
+
+[tool.ruff.format]
+docstring-code-format = true

@@ -32,9 +32,10 @@ Set these up early so every later phase benefits from them.
 - [x] Install pytest as a dev dependency (`uv add --dev pytest`).
 - [x] Configure pytest in `pyproject.toml` (`testpaths = ["tests"]`).
 - [x] Move development-only packages (e.g. `ipython`) from runtime dependencies to the dev group.
-- [x] Add ruff for linting and formatting; configure it in `pyproject.toml`.
-- [x] Optionally add a type checker (mypy or pyright).
-- [ ] Add a CI workflow that runs `uv sync --locked` and `uv run pytest` (plus lint) on every push.
+- [x] Add ruff for linting and formatting; configure rules in `pyproject.toml` (`[tool.ruff]`).
+- [x] Add a type checker: pyright, strict on `src/`, standard on `tests/` (configured in `pyproject.toml`).
+- [x] Add a CI workflow (`.github/workflows/backend.yml`) that runs `uv sync --locked`, ruff lint and format checks, pyright, and pytest.
+- [ ] Confirm the first CI run passes on GitHub.
 
 **Completion:** Tests and lint run identically on a local machine and in CI from the lockfile.
 
