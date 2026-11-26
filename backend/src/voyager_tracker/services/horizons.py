@@ -30,6 +30,10 @@ VOYAGER_1_SAMPLE_PARAMS: Final[dict[str, str]] = {
 }
 
 
+class HorizonsResponseError(RuntimeError):
+    """Horizons returned an error or an invalid response."""
+
+
 def fetch_voyager_1(params: dict[str, str] | None = None) -> tuple[str, datetime]:
     """Fetch Voyager 1's report and record when the response was received."""
     with httpx2.Client(timeout=30.0) as client:
@@ -42,22 +46,24 @@ def fetch_voyager_1(params: dict[str, str] | None = None) -> tuple[str, datetime
     try:
         payload: object = response.json()
     except JSONDecodeError as exc:
-        raise RuntimeError("Horizons returned invalid JSON.") from exc
+        raise HorizonsResponseError("Horizons returned invalid JSON.") from exc
 
     if not isinstance(payload, dict):
-        raise RuntimeError("Horizons returned an invalid response envelope.")
+        raise HorizonsResponseError("Horizons returned an invalid response envelope.")
 
     envelope = cast("dict[str, object]", payload)
     if envelope.get("error"):
-        raise RuntimeError(f"Horizons error: {envelope['error']}")
+        raise HorizonsResponseError(f"Horizons error: {envelope['error']}")
 
     result = envelope.get("result")
 
     if not isinstance(result, str) or "$$SOE" not in result:
-        raise RuntimeError("Horizons did not return an ephemeris table.")
+        raise HorizonsResponseError("Horizons did not return an ephemeris table.")
 
     if "UT~" in result.split("$$SOE", 1)[0]:
-        raise RuntimeError("Horizons returned uncertain UT~ epochs, not confirmed UTC.")
+        raise HorizonsResponseError(
+            "Horizons returned uncertain UT~ epochs, not confirmed UTC."
+        )
 
     return result, retrieved_at
 
@@ -104,14 +110,19 @@ def parse_ephemeris_row(row: str) -> SpacecraftState:
 
 def parse_voyager_1_report(report: str) -> list[SpacecraftState]:
     """Parse report rows whose UT epochs are known UTC."""
-    rows = extract_ephemeris_rows(report)
-    states = [parse_ephemeris_row(row) for row in rows]
+    try:
+        rows = extract_ephemeris_rows(report)
+        states = [parse_ephemeris_row(row) for row in rows]
+    except (ValueError, csv.Error) as exc:
+        raise HorizonsResponseError(
+            "Horizons returned malformed ephemeris data."
+        ) from exc
     now = datetime.now(UTC)
     if any(
         not datetime(1972, 1, 1, tzinfo=UTC) <= state.epoch_utc <= now
         for state in states
     ):
-        raise ValueError(
+        raise HorizonsResponseError(
             "UT epochs before 1972 or in the future cannot be assumed UTC."
         )
     return states
@@ -157,7 +168,7 @@ def get_current_voyager_1_state() -> SpacecraftResponse:
         or states[0].epoch_utc != expected - timedelta(hours=1)
         or states[1].epoch_utc != expected
     ):
-        raise ValueError("Horizons returned unexpected current-time epochs.")
+        raise HorizonsResponseError("Horizons returned unexpected current-time epochs.")
     return SpacecraftResponse(
         spacecraft="Voyager 1",
         source="NASA/JPL Horizons",

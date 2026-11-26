@@ -149,7 +149,7 @@ def test_future_epochs_are_rejected(monkeypatch):
         "fetch_voyager_1",
         lambda params: (f"$$SOE\n{row}\n$$EOE", datetime.now(UTC)),
     )
-    with pytest.raises(ValueError, match="in the future"):
+    with pytest.raises(horizons.HorizonsResponseError, match="in the future"):
         horizons.get_voyager_1_states()
 
     with pytest.raises(ValueError, match="requires UT epochs"):
@@ -164,7 +164,9 @@ def test_current_query_rejects_unexpected_epochs(monkeypatch):
         horizons, "fetch_voyager_1", lambda params: ("report", datetime.now(UTC))
     )
     monkeypatch.setattr(horizons, "parse_voyager_1_report", lambda report: [])
-    with pytest.raises(ValueError, match="unexpected current-time epochs"):
+    with pytest.raises(
+        horizons.HorizonsResponseError, match="unexpected current-time epochs"
+    ):
         horizons.get_current_voyager_1_state()
 
 
@@ -220,14 +222,18 @@ def test_invalid_response_is_rejected(monkeypatch, payload, error):
         lambda **kwargs: client(transport=transport, **kwargs),
     )
 
-    with pytest.raises(RuntimeError, match=error):
+    with pytest.raises(horizons.HorizonsResponseError, match=error):
         horizons.fetch_voyager_1()
 
 
 @pytest.mark.parametrize(
     ("response", "error", "message"),
     [
-        (httpx2.Response(200, text="not JSON"), RuntimeError, "invalid JSON"),
+        (
+            httpx2.Response(200, text="not JSON"),
+            horizons.HorizonsResponseError,
+            "invalid JSON",
+        ),
         (httpx2.Response(503), httpx2.HTTPStatusError, "503"),
     ],
 )
@@ -259,3 +265,34 @@ def test_timeout_is_reported(monkeypatch):
 
     with pytest.raises(httpx2.ReadTimeout, match="Horizons timed out"):
         horizons.fetch_voyager_1()
+
+
+@pytest.mark.parametrize(
+    "report",
+    ["$$SOE\n$$EOE", "$$SOE\ninvalid,row\n$$EOE"],
+)
+def test_service_reports_malformed_ephemeris(monkeypatch, report):
+    monkeypatch.setattr(
+        horizons, "fetch_voyager_1", lambda params: (report, datetime.now(UTC))
+    )
+    with pytest.raises(
+        horizons.HorizonsResponseError, match="malformed ephemeris data"
+    ) as exc:
+        horizons.get_voyager_1_states()
+    assert isinstance(exc.value.__cause__, ValueError)
+
+
+def test_connection_error_is_reported(monkeypatch):
+    client = httpx2.Client
+
+    def fail(request):
+        raise httpx2.ConnectError("Horizons unavailable", request=request)
+
+    transport = httpx2.MockTransport(fail)
+    monkeypatch.setattr(
+        horizons.httpx2,
+        "Client",
+        lambda **kwargs: client(transport=transport, **kwargs),
+    )
+    with pytest.raises(httpx2.ConnectError, match="Horizons unavailable"):
+        horizons.get_current_voyager_1_state()

@@ -187,6 +187,11 @@ yet included in the response.
 
 Currently implemented checks include an HTTP timeout, HTTP status checking, an API-level `error` check, table-marker checks, expected field count, and numerical/model conversion.
 
+HTTP status, connection, and timeout errors retain their `httpx2` types.
+Invalid JSON, API errors, malformed reports, uncertain epochs, and unexpected
+current-time epochs raise `HorizonsResponseError`; malformed report errors retain
+their original cause. Route-level error responses remain to be implemented.
+
 Before exposing the service publicly:
 
 - [ ] Add controlled handling for timeouts, invalid JSON, API errors, missing or malformed rows, and unsupported targets.

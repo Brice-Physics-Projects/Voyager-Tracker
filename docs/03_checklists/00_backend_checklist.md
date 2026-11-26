@@ -72,7 +72,7 @@ Start with Voyager 1 and a Sun-centered position request. Verify current officia
 - [x] Choose a current-time query strategy (e.g. round to the hour for cacheability; stay within supported ephemeris dates) while preserving the fixed sample for tests.
 - [x] Reject rows with an unexpected field count or unconvertible numeric values.
 - [x] Reject non-finite numeric values and test malformed rows, invalid tables, and API-error responses.
-- [ ] Handle upstream and parsing failures explicitly; introduce project exception types if needed to distinguish response behavior.
+- [x] Handle upstream and parsing failures explicitly; introduce project exception types if needed to distinguish response behavior.
 - [ ] Compare parsed results with the same query in the Horizons interface or official output.
 
 **Completion:** The service returns a validated application model rather than an unprocessed upstream response.
@@ -214,4 +214,4 @@ Do these checks alongside the relevant phases; do not defer all validation until
 
 ## Immediate Next Action
 
-Continue **Phase 4** by handling upstream failures and comparing parsed results with Horizons. Future UT epochs remain unsupported until their time-scale uncertainty can be represented. Then expose a minimal, tested Voyager 1 route before expanding the backend.
+Continue **Phase 4** by comparing parsed results with Horizons. Future UT epochs remain unsupported until their time-scale uncertainty can be represented. Then expose a minimal, tested Voyager 1 route before expanding the backend.
