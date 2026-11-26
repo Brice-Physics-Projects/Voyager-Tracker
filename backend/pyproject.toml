@@ -6,7 +6,6 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.146.0",
     "httpx2>=2.16.2",
-    "ipython>=9.17.1",
     "uvicorn[standard]>=0.54.0",
 ]
 
@@ -20,6 +19,10 @@ packages = ["src/voyager_tracker"]
 [dependency-groups]
 dev = [
     "pytest>=9.2.0",
+    "ipython>=9.17.1",
+    "ruff>=0.17.6",
+    "pyright>=1.1.414",
+    "mypy>=2.4.1",
 ]
 
 [tool.pytest.ini_options]

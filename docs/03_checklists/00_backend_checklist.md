@@ -31,9 +31,9 @@ Set these up early so every later phase benefits from them.
 
 - [x] Install pytest as a dev dependency (`uv add --dev pytest`).
 - [x] Configure pytest in `pyproject.toml` (`testpaths = ["tests"]`).
-- [ ] Move development-only packages (e.g. `ipython`) from runtime dependencies to the dev group.
-- [ ] Add ruff for linting and formatting; configure it in `pyproject.toml`.
-- [ ] Optionally add a type checker (mypy or pyright).
+- [x] Move development-only packages (e.g. `ipython`) from runtime dependencies to the dev group.
+- [x] Add ruff for linting and formatting; configure it in `pyproject.toml`.
+- [x] Optionally add a type checker (mypy or pyright).
 - [ ] Add a CI workflow that runs `uv sync --locked` and `uv run pytest` (plus lint) on every push.
 
 **Completion:** Tests and lint run identically on a local machine and in CI from the lockfile.
