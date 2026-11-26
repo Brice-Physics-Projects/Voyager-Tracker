@@ -14,15 +14,19 @@ from voyager_tracker.services.horizons import (
 )
 
 
-def test_recorded_voyager_1_response(monkeypatch):
+@pytest.fixture
+def horizons_fixture():
     path = (
-        Path(__file__).parent
+        Path(__file__).parents[1]
         / "fixtures"
         / "horizons"
         / "voyager_1_sun_vectors_2026-10-19.json"
     )
-    fixture = json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8"))
 
+
+def test_recorded_voyager_1_response(horizons_fixture):
+    fixture = horizons_fixture
     assert fixture["metadata"]["url"] == HORIZONS_URL
     assert fixture["metadata"]["method"] == "GET"
     assert fixture["metadata"]["params"] == VOYAGER_1_SAMPLE_PARAMS
@@ -38,6 +42,10 @@ def test_recorded_voyager_1_response(monkeypatch):
     assert states[1].epoch_utc == datetime(2026, 10, 19, 1, tzinfo=UTC)
     assert states[0].model_dump(mode="json")["epoch_utc"] == "2026-10-19T00:00:00Z"
 
+
+def test_voyager_1_workflow_with_recorded_response(monkeypatch, horizons_fixture):
+    fixture = horizons_fixture
+
     def respond(request):
         assert str(request.url.copy_with(query=None)) == fixture["metadata"]["url"]
         assert request.method == fixture["metadata"]["method"]
@@ -51,7 +59,11 @@ def test_recorded_voyager_1_response(monkeypatch):
         "Client",
         lambda **kwargs: client(transport=transport, **kwargs),
     )
-    assert horizons.get_voyager_1_states() == states
+    states = horizons.get_voyager_1_states()
+    assert len(states) == 2
+    assert states[0].epoch_utc == datetime(2026, 10, 19, tzinfo=UTC)
+    assert states[0].x_km == -4.814738849405165e9
+    assert states[1].epoch_utc == datetime(2026, 10, 19, 1, tzinfo=UTC)
     monkeypatch.setattr(
         horizons, "current_voyager_1_params", lambda now: VOYAGER_1_SAMPLE_PARAMS
     )

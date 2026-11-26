@@ -29,6 +29,11 @@ voyager-explorer/
 │   │       └── core/
 │   │           └── __init__.py
 │   ├── tests/
+│   │   ├── api/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   ├── fixtures/
+│   │   └── conftest.py
 │   ├── pyproject.toml
 │   └── uv.lock
 ├── data/
@@ -45,3 +50,6 @@ voyager-explorer/
         ├── README_dev_diary.md
         └── 2026-10-18_backend_setup.md
 ```
+
+Backend tests are grouped by the application area they exercise; shared pytest
+configuration and recorded responses stay under `tests/`.
