@@ -2,6 +2,8 @@
 
 Use this as the backend implementation roadmap. Check an item only after its completion criteria are met. Record troubleshooting, decisions, and session results separately in `docs/99_dev_diary/`.
 
+Prioritize a minimal current-time Voyager 1 endpoint and its tests before expanding to both spacecraft, caching, images, and the timeline. A thin frontend can be tried against that endpoint without waiting for every backend phase.
+
 ## 1. Project Foundation
 
 - [x] Initialize the backend project with uv.
@@ -35,7 +37,7 @@ Set these up early so every later phase benefits from them.
 - [x] Add ruff for linting and formatting; configure rules in `pyproject.toml` (`[tool.ruff]`).
 - [x] Add a type checker: pyright, strict on `src/`, standard on `tests/` (configured in `pyproject.toml`).
 - [x] Add a CI workflow (`.github/workflows/backend.yml`) that runs `uv sync --locked`, ruff lint and format checks, pyright, and pytest.
-- [ ] Confirm the first CI run passes on GitHub.
+- [x] Confirm the first CI run passes on GitHub.
 
 **Completion:** Tests and lint run identically on a local machine and in CI from the lockfile.
 
@@ -52,23 +54,24 @@ Start with Voyager 1 and a Sun-centered position request. Verify current officia
 - [x] Inspect the returned response, including any error reported inside a successful HTTP response.
 - [x] Identify the actual ephemeris payload within the response envelope.
 - [x] Record units, time conventions, query parameters, and parsing observations in `docs/02_data_sources/00_data_sources.md`.
-- [ ] Save a representative response as a test fixture (e.g. `backend/tests/fixtures/`) with its query metadata; exclude secrets if any.
+- [x] Save a representative response as a test fixture (e.g. `backend/tests/fixtures/`) with its query metadata; exclude secrets if any.
 
 **Completion:** A repeatable request returns understood data for Voyager 1. No public application route is required yet.
 
 ## 4. Parse and Normalize the Data
 
-- [ ] Separate upstream request logic from parsing and calculations.
+- [ ] Keep upstream request logic distinct from parsing and calculations; split files only if useful.
 - [x] Parse the selected epoch and position values from the actual Horizons payload.
 - [x] Define an internal Pydantic model for parsed states in `schemas/` (`SpacecraftState`).
 - [x] Expose derived values (distance, speed) with `@computed_field` so they appear in serialized output.
-- [ ] Define a separate public response model; keep internal parsing models free to change.
+- [ ] Define the public response contract; use a separate model when it needs to differ from the internal model.
 - [ ] Include spacecraft identity, epoch, origin, frame, time scale, units, retrieval time, and source.
-- [ ] Normalize the Horizons calendar epoch (`A.D. 2026-Oct-19 00:00:00.0000`) into a timezone-aware `datetime`.
+- [ ] Normalize the sample's Horizons calendar epoch (`A.D. 2026-Oct-19 00:00:00.0000`) into a timezone-aware `datetime` where UT corresponds to UTC; preserve the time-scale and uncertainty of future UT values when leap seconds are unknown.
 - [ ] Represent Sun-relative distance and speed with explicit names and units.
 - [ ] Choose a current-time query strategy (e.g. round to the hour for cacheability; stay within supported ephemeris dates) while preserving the fixed sample for tests.
-- [x] Reject incomplete or malformed rows rather than returning fabricated values.
-- [ ] Replace generic `RuntimeError`/`ValueError` with project exception types (e.g. upstream unavailable, upstream API error, parse failure).
+- [x] Reject rows with an unexpected field count or unconvertible numeric values.
+- [ ] Reject other invalid data, including non-finite numeric values, and test malformed rows and API-error responses.
+- [ ] Handle upstream and parsing failures explicitly; introduce project exception types if needed to distinguish response behavior.
 - [ ] Compare parsed results with the same query in the Horizons interface or official output.
 
 **Completion:** The service returns a validated application model rather than an unprocessed upstream response.
@@ -81,9 +84,9 @@ Start with Voyager 1 and a Sun-centered position request. Verify current officia
 - [ ] Constrain `spacecraft_id` with an `Enum` or `Literal` so invalid IDs return 422 and valid options appear in `/docs`.
 - [ ] Keep request handling in the route and upstream logic in the service.
 - [ ] Choose sync or async deliberately: a sync client is fine in a `def` route (FastAPI uses a threadpool); use `httpx2.AsyncClient` only in `async def` routes, and never block inside them.
-- [ ] Create one shared HTTP client in the app `lifespan` and close it on shutdown, rather than one client per request.
-- [ ] Inject the client/service with `Depends` so tests can substitute them via `app.dependency_overrides`.
-- [ ] Register exception handlers that map project exceptions to controlled responses (e.g. 502 upstream error, 503 unavailable, 504 timeout) with one consistent error schema.
+- [ ] Consider a shared HTTP client in the app `lifespan` when connection reuse is useful, and close it on shutdown.
+- [ ] Make upstream calls substitutable in tests; use `Depends` and `app.dependency_overrides` if appropriate.
+- [ ] Map upstream and parsing failures to controlled responses (e.g. 502 upstream error, 503 unavailable, 504 timeout) with one consistent error schema; add exception handlers where useful.
 - [ ] Return the defined response model via `response_model=`.
 - [ ] Document the endpoint, its reference conventions, and its error responses in `/docs`.
 - [ ] Verify the endpoint through `/docs`.
@@ -118,13 +121,11 @@ Start with Voyager 1 and a Sun-centered position request. Verify current officia
 - [ ] Include query-defining parameters in cache keys so different origins and epochs cannot collide.
 - [ ] Distinguish the position epoch, original retrieval time, and cache expiration.
 - [ ] Cache successful, validated results rather than error payloads.
-- [ ] Prevent concurrent refreshes of the same key (lock / single-flight) so an expiry does not trigger a burst of upstream requests.
-- [ ] Define a maximum acceptable stale-data age.
-- [ ] Preserve last successful data during temporary failures only within that limit.
-- [ ] Label stale responses explicitly.
+- [ ] Add single-flight locking if concurrent refreshes become a concern.
+- [ ] If stale-data fallback is needed, define a maximum acceptable age, preserve only eligible successful data, and label stale responses explicitly.
 - [ ] Return controlled errors when no usable cached data exists.
 - [ ] Handle upstream timeouts, HTTP errors, API-level errors, and parsing failures.
-- [ ] Add bounded retries only for suitable transient failures.
+- [ ] Add bounded retries for suitable transient failures only if needed.
 - [ ] Optionally set `Cache-Control` headers consistent with the server-side cache.
 - [ ] Keep `/health` independent of upstream services; add a separate readiness/upstream-status check only if needed.
 - [ ] Add useful logs without credentials or excessive response dumps.
@@ -133,7 +134,7 @@ Start with Voyager 1 and a Sun-centered position request. Verify current officia
 
 ## 9. Prepare the Frontend Connection
 
-- [ ] Centralize backend configuration in `core/` using `pydantic-settings`.
+- [ ] Centralize backend configuration when needed; use `pydantic-settings` only if its features are useful.
 - [ ] Configure CORS for the specific local frontend origin if browser requests go directly to FastAPI.
 - [ ] Document environment variables and defaults.
 - [ ] Add a safe `.env.example` without credentials.
@@ -174,9 +175,9 @@ Do these checks alongside the relevant phases; do not defer all validation until
 - [x] Test derived distance and speed values and their serialization.
 - [ ] Test unit conversions and signal-delay calculations with known inputs.
 - [ ] Test Horizons parsing against representative fixtures, including malformed and API-error responses.
-- [ ] Test route validation and response schemas with upstream calls mocked (`app.dependency_overrides`, `httpx2.MockTransport`).
-- [ ] Test exception handlers return the documented status codes and error schema.
-- [ ] Test cache hits, expiration, stale limits, and upstream failure behavior.
+- [ ] Test route validation and response schemas with upstream calls mocked (e.g. `app.dependency_overrides` or `httpx2.MockTransport`).
+- [ ] Test that upstream failures return the documented status codes and error schema.
+- [ ] Test cache hits, expiration, and upstream failure behavior; test stale limits if fallback is implemented.
 - [ ] Test partial failures for the combined spacecraft endpoint.
 - [ ] Test gallery normalization and timeline validation.
 - [ ] Keep routine tests independent of live NASA/JPL availability.
@@ -212,4 +213,4 @@ Do these checks alongside the relevant phases; do not defer all validation until
 
 ## Immediate Next Action
 
-Finish **Phase 3** by saving the Voyager 1 Horizons response as a test fixture, then begin **Phase 4**: normalize the epoch to a `datetime`, define the public response model, and introduce project exception types. The goal is a fixture-tested, validated model before any spacecraft route exists.
+Continue **Phase 4** with parsing and API-error tests, including non-finite values, and normalize the sample epoch with its time-scale caveats. Then choose a current-time query and expose a minimal, tested Voyager 1 route with controlled errors before expanding the backend.

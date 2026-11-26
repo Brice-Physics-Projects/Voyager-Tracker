@@ -1,35 +1,37 @@
 import csv
+from typing import Final
 
 import httpx2
 
 from voyager_tracker.schemas.spacecraft import SpacecraftState
 
-HORIZONS_URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
+HORIZONS_URL: Final = "https://ssd.jpl.nasa.gov/api/horizons.api"
+
+# Fixed sample query: Voyager 1, Sun-centered geometric ICRF state vectors.
+VOYAGER_1_SAMPLE_PARAMS: Final[dict[str, str]] = {
+    "format": "json",
+    "COMMAND": "'-31'",
+    "OBJ_DATA": "'YES'",
+    "MAKE_EPHEM": "'YES'",
+    "EPHEM_TYPE": "'VECTORS'",
+    "CENTER": "'500@10'",
+    "START_TIME": "'2026-10-19 00:00'",
+    "STOP_TIME": "'2026-10-19 01:00'",
+    "STEP_SIZE": "'1 h'",
+    "TIME_TYPE": "'UT'",
+    "REF_SYSTEM": "'ICRF'",
+    "REF_PLANE": "'FRAME'",
+    "OUT_UNITS": "'KM-S'",
+    "VEC_CORR": "'NONE'",
+    "VEC_TABLE": "'2'",
+    "CSV_FORMAT": "'YES'",
+}
 
 
 def fetch_voyager_1() -> str:
     """Fetch a small sample of Voyager 1's Sun-relative state vectors."""
-    params = {
-        "format": "json",
-        "COMMAND": "'-31'",
-        "OBJ_DATA": "'YES'",
-        "MAKE_EPHEM": "'YES'",
-        "EPHEM_TYPE": "'VECTORS'",
-        "CENTER": "'500@10'",
-        "START_TIME": "'2026-10-19 00:00'",
-        "STOP_TIME": "'2026-10-19 01:00'",
-        "STEP_SIZE": "'1 h'",
-        "TIME_TYPE": "'UT'",
-        "REF_SYSTEM": "'ICRF'",
-        "REF_PLANE": "'FRAME'",
-        "OUT_UNITS": "'KM-S'",
-        "VEC_CORR": "'NONE'",
-        "VEC_TABLE": "'2'",
-        "CSV_FORMAT": "'YES'",
-    }
-
     with httpx2.Client(timeout=30.0) as client:
-        response = client.get(HORIZONS_URL, params=params)
+        response = client.get(HORIZONS_URL, params=VOYAGER_1_SAMPLE_PARAMS)
         response.raise_for_status()
 
     payload = response.json()

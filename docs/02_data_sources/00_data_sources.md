@@ -38,6 +38,12 @@ Horizons supplies the calculated position and velocity data used by the initial 
 
 The service currently uses fixed sample dates. It does not yet supply current-time positions through a spacecraft HTTP endpoint.
 
+The recorded response and its request metadata are in
+`backend/tests/fixtures/horizons/voyager_1_sun_vectors_2026-10-19.json`.
+Horizons requires no credentials for this request. To refresh the fixture after
+the sample query changes, run `uv run python scripts/capture_horizons_fixture.py`
+from `backend/` and review the resulting diff.
+
 ### Target Identifiers
 
 | Spacecraft | Horizons identifier | Project verification |
