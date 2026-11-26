@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from voyager_tracker.schemas.spacecraft import SpacecraftState
+from voyager_tracker.schemas.spacecraft import SpacecraftResponse, SpacecraftState
 
 
 def make_state() -> SpacecraftState:
@@ -29,3 +29,32 @@ def test_derived_values_are_serialized():
 
     assert dumped["distance_from_sun_km"] == 5.0
     assert dumped["speed_relative_to_sun_km_s"] == 10.0
+
+
+def test_spacecraft_response_exposes_provenance_and_state():
+    response = SpacecraftResponse(
+        spacecraft="Voyager 1",
+        source="NASA/JPL Horizons",
+        origin="Sun",
+        frame="ICRF",
+        time_scale="UTC",
+        position_unit="km",
+        velocity_unit="km/s",
+        correction="geometric",
+        retrieved_at_utc=datetime(2026, 10, 19, 2, tzinfo=UTC),
+        state=make_state(),
+    )
+    serialized = response.model_dump(mode="json")
+
+    assert serialized["spacecraft"] == "Voyager 1"
+    assert serialized["source"] == "NASA/JPL Horizons"
+    assert serialized["origin"] == "Sun"
+    assert serialized["frame"] == "ICRF"
+    assert serialized["time_scale"] == "UTC"
+    assert serialized["position_unit"] == "km"
+    assert serialized["velocity_unit"] == "km/s"
+    assert serialized["correction"] == "geometric"
+    assert serialized["retrieved_at_utc"] == "2026-10-19T02:00:00Z"
+    assert serialized["state"]["epoch_utc"] == "2026-10-19T00:00:00Z"
+    assert serialized["state"]["distance_from_sun_km"] == 5.0
+    assert serialized["state"]["speed_relative_to_sun_km_s"] == 10.0

@@ -167,3 +167,40 @@ def test_invalid_response_is_rejected(monkeypatch, payload, error):
 
     with pytest.raises(RuntimeError, match=error):
         horizons.fetch_voyager_1()
+
+
+@pytest.mark.parametrize(
+    ("response", "error", "message"),
+    [
+        (httpx2.Response(200, text="not JSON"), RuntimeError, "invalid JSON"),
+        (httpx2.Response(503), httpx2.HTTPStatusError, "503"),
+    ],
+)
+def test_http_and_json_errors_are_reported(monkeypatch, response, error, message):
+    client = httpx2.Client
+    transport = httpx2.MockTransport(lambda request: response)
+    monkeypatch.setattr(
+        horizons.httpx2,
+        "Client",
+        lambda **kwargs: client(transport=transport, **kwargs),
+    )
+
+    with pytest.raises(error, match=message):
+        horizons.fetch_voyager_1()
+
+
+def test_timeout_is_reported(monkeypatch):
+    client = httpx2.Client
+
+    def timeout(request):
+        raise httpx2.ReadTimeout("Horizons timed out", request=request)
+
+    transport = httpx2.MockTransport(timeout)
+    monkeypatch.setattr(
+        horizons.httpx2,
+        "Client",
+        lambda **kwargs: client(transport=transport, **kwargs),
+    )
+
+    with pytest.raises(httpx2.ReadTimeout, match="Horizons timed out"):
+        horizons.fetch_voyager_1()

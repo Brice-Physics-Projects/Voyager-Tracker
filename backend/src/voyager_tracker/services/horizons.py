@@ -1,5 +1,6 @@
 import csv
 from datetime import UTC, datetime, timedelta
+from json import JSONDecodeError
 from typing import Final, cast
 
 import httpx2
@@ -37,7 +38,10 @@ def fetch_voyager_1(params: dict[str, str] | None = None) -> str:
         )
         response.raise_for_status()
 
-    payload: object = response.json()
+    try:
+        payload: object = response.json()
+    except JSONDecodeError as exc:
+        raise RuntimeError("Horizons returned invalid JSON.") from exc
 
     if not isinstance(payload, dict):
         raise RuntimeError("Horizons returned an invalid response envelope.")

@@ -64,7 +64,7 @@ Start with Voyager 1 and a Sun-centered position request. Verify current officia
 - [x] Parse the selected epoch and position values from the actual Horizons payload.
 - [x] Define an internal Pydantic model for parsed states in `schemas/` (`SpacecraftState`).
 - [x] Expose derived values (distance, speed) with `@computed_field` so they appear in serialized output.
-- [ ] Define the public response contract; use a separate model when it needs to differ from the internal model.
+- [x] Define the public response contract; use a separate model when it needs to differ from the internal model.
 - [ ] Include spacecraft identity, epoch, origin, frame, time scale, units, retrieval time, and source.
 - [x] Normalize the fixed sample's Horizons calendar epoch (`A.D. 2026-Oct-19 00:00:00.0000`) into a timezone-aware UTC `datetime`.
 - [ ] Preserve the time scale and uncertainty of future UT values when leap seconds are unknown before accepting future epochs.

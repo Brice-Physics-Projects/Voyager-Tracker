@@ -31,6 +31,7 @@ Horizons supplies the calculated position and velocity data used by the initial 
 | --- | --- |
 | Request and parsing service | `backend/src/voyager_tracker/services/horizons.py` |
 | Parsed state model | `backend/src/voyager_tracker/schemas/spacecraft.py` |
+| Public response contract | `SpacecraftResponse` in `backend/src/voyager_tracker/schemas/spacecraft.py` |
 | Fetch report | `fetch_voyager_1()` |
 | Extract table | `extract_ephemeris_rows()` |
 | Parse row | `parse_ephemeris_row()` |
@@ -164,7 +165,12 @@ Keep the following distinct:
 
 The report's `Revised: Aug 19, 2022` heading is not the position epoch. The verified report identifies the trajectory source as `Voyager_1_ST+refit2022_m` and describes a 2022 refit of historical tracking data followed by extrapolation. It explicitly distinguishes that tracking history from onboard telemetry.
 
-The current parsed state model does not yet carry retrieval time, reference metadata, or trajectory provenance as fields. Add these to the service result/public response before presenting the application as a current tracker.
+The `SpacecraftResponse` contract contains the state, spacecraft identity, source,
+Sun origin, ICRF frame, UTC time scale, units, geometric correction, and retrieval
+time. It is not yet populated by the service or exposed through an endpoint.
+The retrieval time must be captured when the upstream response is obtained, not
+replaced by the position epoch or a later cache-hit time. Trajectory provenance
+is not yet included in the response.
 
 ### Limitations
 
