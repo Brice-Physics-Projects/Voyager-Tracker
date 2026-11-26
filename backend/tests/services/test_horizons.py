@@ -37,9 +37,30 @@ def test_recorded_voyager_1_response(horizons_fixture):
     states = [parse_ephemeris_row(row) for row in rows]
     assert len(states) == 2
     assert states[0].epoch_utc == datetime(2026, 10, 19, tzinfo=UTC)
-    assert states[0].x_km == -4.814738849405165e9
-    assert states[0].vx_km_s == -2.069749408670841
     assert states[1].epoch_utc == datetime(2026, 10, 19, 1, tzinfo=UTC)
+    assert [
+        (s.julian_date, s.x_km, s.y_km, s.z_km, s.vx_km_s, s.vy_km_s, s.vz_km_s)
+        for s in states
+    ] == [
+        (
+            2461332.5,
+            -4.814738849405165e9,
+            -2.469601236141591e10,
+            5.451068564872480e9,
+            -2.069749408670841,
+            -16.39897608683458,
+            3.606221284006005,
+        ),
+        (
+            2461332.541666667,
+            -4.814746300502325e9,
+            -2.469607139772958e10,
+            5.451081547268416e9,
+            -2.069749013219709,
+            -16.39897594870721,
+            3.606220901825135,
+        ),
+    ]
     assert states[0].model_dump(mode="json")["epoch_utc"] == "2026-10-19T00:00:00Z"
 
 

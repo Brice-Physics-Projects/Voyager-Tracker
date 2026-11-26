@@ -155,6 +155,13 @@ The model exposes these magnitudes as Pydantic computed fields, including in ser
 
 These are recorded development outputs, not current-position values or an independent validation dataset. Keep full numerical precision internally and round only for display.
 
+On 2026-11-26 UTC, the two parsed fixture rows were compared with a fresh
+Horizons API text response using the same sample query, changing only `format`
+from `json` to `text`. Both epochs, Julian dates, and all six vector components
+matched the printed output; the report also confirmed Voyager 1, Sun center,
+ICRF, geometric states, km and km/s, and UT. This checks parsing against
+official output, not the physical accuracy of the trajectory.
+
 ### Time and Provenance
 
 Keep the following distinct:
@@ -199,7 +206,7 @@ Before exposing the service publicly:
 - [ ] Add parsing tests using recorded response fixtures.
 - [ ] Add known-input checks for vector magnitudes.
 - [ ] Define how empty results and partial failures are represented.
-- [ ] Compare selected values with the same query parameters in the official interface.
+- [x] Compare selected values with the same query parameters in official Horizons output.
 
 ## 2. Planned Earth-Relative Distance and Signal Delay
 

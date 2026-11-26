@@ -67,15 +67,17 @@ Start with Voyager 1 and a Sun-centered position request. Verify current officia
 - [x] Define the public response contract; use a separate model when it needs to differ from the internal model.
 - [x] Include spacecraft identity, epoch, origin, frame, time scale, units, retrieval time, and source.
 - [x] Normalize the fixed sample's Horizons calendar epoch (`A.D. 2026-Oct-19 00:00:00.0000`) into a timezone-aware UTC `datetime`.
-- [ ] Preserve the time scale and uncertainty of future UT values when leap seconds are unknown before accepting future epochs.
+- [x] Reject future UT epochs rather than treating uncertain values as definitive UTC.
 - [x] Represent Sun-relative distance and speed with explicit names and units.
 - [x] Choose a current-time query strategy (e.g. round to the hour for cacheability; stay within supported ephemeris dates) while preserving the fixed sample for tests.
 - [x] Reject rows with an unexpected field count or unconvertible numeric values.
 - [x] Reject non-finite numeric values and test malformed rows, invalid tables, and API-error responses.
 - [x] Handle upstream and parsing failures explicitly; introduce project exception types if needed to distinguish response behavior.
-- [ ] Compare parsed results with the same query in the Horizons interface or official output.
+- [x] Compare parsed results with the same query in the Horizons interface or official output.
 
 **Completion:** The service returns a validated application model rather than an unprocessed upstream response.
+
+Future epochs are not supported. Before adding them, preserve the source time scale and uncertainty when future leap seconds are unknown.
 
 ## 5. Expose the First Spacecraft Route
 
@@ -214,4 +216,4 @@ Do these checks alongside the relevant phases; do not defer all validation until
 
 ## Immediate Next Action
 
-Continue **Phase 4** by comparing parsed results with Horizons. Future UT epochs remain unsupported until their time-scale uncertainty can be represented. Then expose a minimal, tested Voyager 1 route before expanding the backend.
+Begin **Phase 5** by exposing a minimal, tested Voyager 1 route with controlled errors. Future UT epochs remain unsupported until their time-scale uncertainty can be represented.
